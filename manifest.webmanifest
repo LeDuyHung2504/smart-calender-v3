@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "ChronoFlow",
+  "short_name": "ChronoFlow",
+  "description": "Ứng dụng lập lịch thông minh, ma trận Eisenhower nâng cao và phân tích thời gian rảnh theo phong cách Google/Samsung Calendar.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

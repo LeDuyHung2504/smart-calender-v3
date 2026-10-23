@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>ChronoFlow - Quản lý thời gian & Lịch biểu cá nhân</title>
+    <meta name="description" content="Ứng dụng lập lịch thông minh, ma trận Eisenhower nâng cao và phân tích thời gian rảnh theo phong cách Google/Samsung Calendar." />
+    <meta property="og:title" content="ChronoFlow - Quản lý thời gian & Lịch biểu cá nhân" />
+    <meta property="og:description" content="Ứng dụng lập lịch thông minh, ma trận Eisenhower nâng cao và phân tích thời gian rảnh theo phong cách Google/Samsung Calendar." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="ChronoFlow" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <!-- Anti-FOUC Theme Script -->
+    <script>
+      (function() {
+        try {
+          const savedTheme = localStorage.getItem('chronoflow_theme');
+          const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            document.documentElement.classList.add('dark-theme');
+          }
+        } catch(e) {}
+      })();
+    </script>
+    <!-- Google Identity Services (GSI) Client SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <!-- Thanh điều hướng chính của App -->
+    <header class="app-header">
+      <div class="brand-section">
+        <button class="icon-btn sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Ẩn / Hiện thanh bên (Ctrl+B)" aria-label="Ẩn / Hiện thanh bên">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="brand-logo" onclick="setView('day')" style="cursor:pointer;">CF</div>
+        <h1 class="brand-title" onclick="setView('day')" style="cursor:pointer;">ChronoFlow</h1>
+      </div>
+
+      <!-- Navigation Tabs chuyển chế độ xem -->
+      <nav class="view-nav">
+        <button class="nav-btn" data-view="year" onclick="setView('year')" title="Xem Năm (Phím 1)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+          <span class="nav-text-year">Năm</span>
+        </button>
+        <button class="nav-btn" data-view="month" onclick="setView('month')" title="Xem Tháng (Phím 2)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span class="nav-text-month">Tháng</span>
+        </button>
+        <button class="nav-btn active" data-view="day" onclick="setView('day')" title="Xem Ngày (Phím 3)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="nav-text-day">Ngày (Timeline 24h)</span>
+        </button>
+        <button class="nav-btn" data-view="eisenhower" onclick="setView('eisenhower')" title="Ma Trận Eisenhower (Phím 4)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span class="nav-text-eisenhower">Ma Trận Eisenhower</span>
+        </button>
+      </nav>
+
+      <div class="header-controls">
+        <!-- Nút chuyển đổi giao diện Sáng / Tối -->
+        <button id="theme-toggle-btn" class="icon-btn theme-toggle-btn" onclick="toggleTheme()" title="Chuyển đổi giao diện Sáng / Tối" aria-label="Chuyển đổi giao diện Sáng / Tối">
+          <svg class="sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+        <!-- Nút đồng bộ Google Calendar -->
+        <button id="header-gcal-btn" class="btn-secondary gcal-header-btn" onclick="triggerHeaderGCalAction()" title="Đồng bộ Google Calendar">
+          <span id="header-gcal-icon"></span>
+          <span id="header-gcal-text">Google Calendar</span>
+        </button>
+        <!-- Huy hiệu Chuỗi Kỷ luật & Đóng băng toàn cục (Global Streak Badge) -->
+        <button id="header-streak-badge" class="header-streak-badge" onclick="openProductivityModal(window.selectedDate || '')" title="Xem Chi Tiết Chuỗi Kỷ Luật &amp; Số Liệu Năng Suất">
+          <span class="streak-badge-fire" style="display:inline-flex; align-items:center; gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            <span id="header-streak-count">0</span>
+          </span>
+          <span class="streak-badge-divider">|</span>
+          <span class="streak-badge-freeze" style="display:inline-flex; align-items:center; gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="M20 16l-4-4 4-4"/><path d="M4 8l4 4-4 4"/><path d="M16 4l-4 4-4-4"/><path d="M8 20l4-4 4 4"/></svg>
+            <span id="header-freeze-count">0/2</span>
+          </span>
+        </button>
+        <button class="btn-primary" onclick="openAddTaskModal()" id="btn-add-task-header-parent" title="Thêm Task mới (Phím T)">
+          <span id="btn-add-task-header">Thêm Task</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Thân ứng dụng gồm Sidebar và Khung hiển thị nội dung -->
+    <main class="app-container">
+      <aside class="app-sidebar" id="app-sidebar-content">
+        <!-- Sidebar content do app.js render tự động kèm docked Settings button -->
+        <div class="sidebar-bottom-dock">
+          <button 
+            id="btn-floating-settings" 
+            class="floating-settings-btn sidebar-docked-settings-btn" 
+            onclick="openSettingsModal()" 
+            title="Cài đặt hệ thống (Phím S)"
+            aria-label="Cài đặt hệ thống"
+          >
+            <svg class="gear-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span class="floating-btn-label" id="floating-settings-label">Cài Đặt</span>
+          </button>
+        </div>
+      </aside>
+
+      <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+
+      <section class="app-content" id="view-container">
+        <!-- Nội dung của view hiện tại do app.js render -->
+      </section>
+    </main>
+
+    <!-- Bottom Navigation cho màn hình dọc điện thoại Android & iOS -->
+    <nav class="mobile-nav-bar" id="mobile-bottom-nav">
+      <button class="mobile-nav-btn nav-btn" data-view="day" onclick="setView('day')" title="Ngày">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="mobile-nav-text-day">Ngày</span>
+      </button>
+      <button class="mobile-nav-btn nav-btn" data-view="eisenhower" onclick="setView('eisenhower')" title="Ma Trận Eisenhower">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18"/></svg>
+        <span class="mobile-nav-text-eisenhower">Ma Trận</span>
+      </button>
+      <button class="mobile-nav-btn nav-btn" data-view="year" onclick="setView('year')" title="Năm">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="mobile-nav-text-year">Năm</span>
+      </button>
+      <button class="mobile-nav-btn nav-btn" data-view="settings" id="mobile-nav-btn-settings" onclick="openSettingsModal()" title="Cài Đặt (Phím S)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span class="mobile-nav-text-settings">Cài Đặt</span>
+      </button>
+    </nav>
+
+    <!-- Nút Nổi Thao Tác Nhanh Trợ Năng Cho Mobile (Mobile Quick Actions FAB) -->
+    <div id="mobile-quick-fab-backdrop" class="mobile-quick-fab-backdrop" onclick="toggleMobileQuickActionsMenu(false)"></div>
+    <div id="mobile-quick-fab-root" class="mobile-quick-fab-root" style="display:none;">
+      <div id="mobile-quick-actions-sheet" class="mobile-quick-actions-sheet" role="menu" aria-label="Mobile Quick Actions"></div>
+      <button type="button" id="mobile-quick-fab-btn" class="mobile-quick-fab-btn" onclick="toggleMobileQuickActionsMenu()" aria-label="Thao tác nhanh mobile" title="Thao tác nhanh">
+        <svg class="fab-icon-default" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <svg class="fab-icon-close" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- FULL-SCREEN CHROME-STYLE SETTINGS MODAL OVERLAY -->
+    <div id="settings-overlay-modal" class="settings-overlay" onclick="handleSettingsBackdropClick(event)">
+      <div class="settings-chrome-window" onclick="event.stopPropagation()">
+        
+        <!-- TOP BAR: Tiêu đề & Nút đóng dạng Chrome -->
+        <header class="settings-top-bar">
+          <div class="settings-brand-header">
+            <!-- Mobile Back Button (shown only when in detail pane on mobile) -->
+            <button id="settings-mobile-back-btn" class="settings-mobile-back-btn" onclick="backToMobileSettingsMenu()" title="Quay lại danh mục" style="display:none;" aria-label="Quay lại">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <div class="settings-brand-badge" id="settings-brand-badge">CF</div>
+            <div>
+              <h2 class="settings-main-title" id="settings-modal-main-title">Cài Đặt Hệ Thống</h2>
+              <p class="settings-main-sub" id="settings-modal-sub-title">ChronoFlow Settings &amp; Preferences</p>
+            </div>
+          </div>
+          <button 
+            id="btn-close-settings-modal" 
+            class="settings-close-circle-btn" 
+            onclick="closeSettingsModal()" 
+            title="Đóng cài đặt (Esc)"
+            aria-label="Đóng"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </header>
+
+        <!-- MAIN WRAPPER: SIDEBAR + CONTENT -->
+        <div class="settings-layout-body">
+          
+          <!-- MOBILE TIERED MENU (Hiển thị dạng menu xếp tầng trên màn hình nhỏ Android/Mobile) -->
+          <div id="settings-mobile-tiered-menu" class="settings-mobile-tiered-menu" style="display:none;"></div>
+
+          <!-- 1. SIDEBAR GHIM CỐ ĐỊNH (STICKY SIDEBAR FOR DESKTOP / LARGE SCREEN) -->
+          <aside class="settings-sidebar" id="settings-desktop-sidebar">
+            <nav class="settings-nav-list" role="tablist">
+              
+              <button class="settings-nav-item active" data-target="tab-account-sync" role="tab" aria-selected="true" onclick="switchSettingsTab('tab-account-sync')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span id="nav-tab-account-label">Tài khoản &amp; Đồng bộ</span>
+              </button>
+
+              <button class="settings-nav-item" data-target="tab-appearance-display" role="tab" aria-selected="false" onclick="switchSettingsTab('tab-appearance-display')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20v-2a8 8 0 0 0 0-16V2z"/></svg>
+                <span id="nav-tab-appearance-label">Giao diện &amp; Hiển thị</span>
+              </button>
+
+              <button class="settings-nav-item" data-target="tab-data-management" role="tab" aria-selected="false" onclick="switchSettingsTab('tab-data-management')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span id="nav-tab-data-label">Quản lý Dữ liệu</span>
+              </button>
+
+              <button class="settings-nav-item" data-target="tab-help-doc" role="tab" aria-selected="false" onclick="switchSettingsTab('tab-help-doc')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span id="nav-tab-help-label">Trợ giúp &amp; Tài liệu</span>
+              </button>
+
+              <button class="settings-nav-item" data-target="tab-changelog" role="tab" aria-selected="false" onclick="switchSettingsTab('tab-changelog')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <span id="nav-tab-changelog-label">Nhật Ký Cập Nhật</span>
+              </button>
+
+            </nav>
+
+            <div class="settings-sidebar-footer">
+              <span class="cf-version-pill">ChronoFlow v1.3.0 • 100% Offline</span>
+            </div>
+          </aside>
+
+          <!-- 2. KHU VỰC NỘI DUNG CUỘN (SCROLLABLE CONTENT AREA) -->
+          <main class="settings-content" id="settings-content-container">
+            
+            <!-- TAB 1: TÀI KHOẢN & ĐỒNG BỘ -->
+            <section id="tab-account-sync" class="settings-tab-pane active" role="tabpanel">
+              <div class="settings-pane-header">
+                <h3 class="pane-title" id="pane-title-account">Tài khoản &amp; Đồng bộ Google Calendar</h3>
+                <p class="pane-subtitle" id="pane-sub-account">Quản lý kết nối OAuth 2.0, tự động quét sự kiện ngầm và đồng bộ lịch 2 chiều.</p>
+              </div>
+              <div id="settings-gcal-mount-point" class="settings-card-stack"></div>
+            </section>
+
+            <!-- TAB 2: GIAO DIỆN & HIỂN THỊ -->
+            <section id="tab-appearance-display" class="settings-tab-pane" role="tabpanel" style="display:none;">
+              <div class="settings-pane-header">
+                <h3 class="pane-title" id="pane-title-appearance">Giao diện &amp; Hiển thị Lịch biểu</h3>
+                <p class="pane-subtitle" id="pane-sub-appearance">Tùy biến ngưỡng tập trung, màu sắc đồng bộ Google Calendar và tỉ lệ hiển thị.</p>
+              </div>
+              <div id="settings-appearance-mount-point" class="settings-card-stack"></div>
+            </section>
+
+            <!-- TAB 3: QUẢN LÝ DỮ LIỆU -->
+            <section id="tab-data-management" class="settings-tab-pane" role="tabpanel" style="display:none;">
+              <div class="settings-pane-header">
+                <h3 class="pane-title" id="pane-title-data">Sao Lưu &amp; Quản Lý Dữ Liệu</h3>
+                <p class="pane-subtitle" id="pane-sub-data">Bảo vệ dữ liệu cá nhân với cơ chế đếm ngược 5 giây an toàn chống xóa nhầm.</p>
+              </div>
+              <div id="settings-data-mount-point" class="settings-card-stack"></div>
+            </section>
+
+            <!-- TAB 4: TRỢ GIÚP & TÀI LIỆU -->
+            <section id="tab-help-doc" class="settings-tab-pane" role="tabpanel" style="display:none;">
+              <div class="settings-pane-header">
+                <h3 class="pane-title" id="pane-title-help">Tài Liệu Hướng Dẫn Sử Dụng</h3>
+                <p class="pane-subtitle" id="pane-sub-help">Cẩm nang chi tiết về triết lý 1440 phút, Ma trận Eisenhower, Attention và Auto-match.</p>
+              </div>
+              <div id="settings-help-mount-point" class="settings-card-stack"></div>
+            </section>
+
+            <!-- TAB 5: NHẬT KÝ PHÁT TRIỂN & CẬP NHẬT -->
+            <section id="tab-changelog" class="settings-tab-pane" role="tabpanel" style="display:none;">
+              <div class="settings-pane-header">
+                <h3 class="pane-title" id="pane-title-changelog">Nhật Ký Phát Triển &amp; Lịch Sử Phiên Bản</h3>
+                <p class="pane-subtitle" id="pane-sub-changelog">Tổng hợp các mốc nâng cấp, tính năng mới và cải tiến giao diện theo từng phiên bản.</p>
+              </div>
+              <div id="settings-changelog-mount-point" class="settings-card-stack"></div>
+            </section>
+
+          </main>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Sync Status Toast / Indicator -->
+    <div id="gcal-floating-widget" class="gcal-floating-widget" style="display:none;">
+      <span class="gcal-spin-icon"></span>
+      <span id="gcal-floating-msg">Đang đồng bộ Google Calendar...</span>
+    </div>
+
+    <script type="module" src="/src/app.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function (e) { console.error(e); });
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix Remix Remix Remix Remix Remix Remix Remix Remix Remix Remix Remix Remix ChronoFlow - Quản lý thời gian \u0026 Lịch biểu cá nhân",
+  "description": "Ứng dụng lập lịch thông minh, ma trận Eisenhower nâng cao và phân tích thời gian rảnh theo phong cách Google/Samsung Calendar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
